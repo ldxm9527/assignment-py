@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import math
+import random
 
 
 class Perceptorn(object):
@@ -21,7 +23,8 @@ class Perceptorn(object):
     def fit1(self, x_, y_):
         # 根据误判点的梯度更新参数,对应a问
         if x_.shape[0] != y_.shape[0]:
-            raise ValueError("rows of x and y are not identical, check your input")
+            raise ValueError(
+                "rows of x and y are not identical, check your input")
 
         rows = x_.shape[0]
         x_0 = np.ones(rows)
@@ -42,7 +45,8 @@ class Perceptorn(object):
     def fit2(self, x_, y_):
         # 根据距离最近的点调整超平面,对应b问
         if x_.shape[0] != y_.shape[0]:
-            raise ValueError("rows of x and y are not identical, check your input")
+            raise ValueError(
+                "rows of x and y are not identical, check your input")
         rows = x_.shape[0]
         x_0 = np.ones(rows)
         x_ = np.column_stack((x_0.T, x_))
@@ -66,8 +70,8 @@ class Perceptorn(object):
         x2_pos = [x_[i][1] for i in range(rows) if y_[i] > 0]
         x1_neg = [x_[i][0] for i in range(rows) if y_[i] < 0]
         x2_neg = [x_[i][1] for i in range(rows) if y_[i] < 0]
-        plt.scatter(x1_pos, x2_pos, color = 'hotpink')
-        plt.scatter(x1_neg, x2_neg, color = '#88c999')
+        plt.scatter(x1_pos, x2_pos, color='hotpink')
+        plt.scatter(x1_neg, x2_neg, color='#88c999')
 
         xp_1, xp_2 = x_[0][0], x_[0][0]
         for i in range(1, rows):
@@ -83,39 +87,36 @@ class Perceptorn(object):
         plt.show()
         return
 
-def gen_point_cloud(need, dim):
-    x_pos = np.random.normal(loc=[1, 4], scale=[0.5, 0.75], size=(need//2, dim))
-    y_pos = np.ones(need//2)
-    x_neg = np.random.normal(loc=[4, 1], scale=[1, 0.75], size=(need-need//2, dim))
-    y_neg = (-1) * np.ones(need-need//2)
+
+def gen_points(need, center, r, is_pos):
+    x = []
+    # random angle
+    for i in range(need):
+        angle = 2 * math.pi * random.random()
+        # random radius
+        r_ = r * math.sqrt(random.random())
+        # calculating coordinates
+        x1 = r_ * math.cos(angle) + center[0]
+        x2 = r_ * math.sin(angle) + center[1]
+        x.append([x1, x2])
+    y = np.ones(need) if is_pos else (-1)*np.ones(need)
+    return np.array(x), y
+
+
+def gen_point_cloud(need, center1, r1, center2, r2):
+    "只能生成二维的2个点云"
+    x_pos, y_pos = gen_points(need//2, center1, r1, True)
+    x_neg, y_neg = gen_points(need-need//2, center2, r2, False)
     x = np.row_stack((x_pos, x_neg))
     y = np.append(y_pos, y_neg)
     return x, y
 
 
 if __name__ == "__main__":
-    x, y = gen_point_cloud(800, 2)
+    # 自己输入需要的数据点数量,2个圆心和2个半径
+    x, y = gen_point_cloud(800, [-0.75, -0.75], 0.8, [0.75, 0.75], 0.75)
     p = Perceptorn(l_=1)
-    p.fit1(x, y)
+    # p.fit1(x, y)  # a问的迭代公式
+    p.fit2(x, y)  # b问的迭代公式
     p.print_formula()
     p.plot(x, y)
-    
-
-    # # 测试,例子来源于《统计学习方法》by李航
-    # # 训练集,注意每行x的第一个元素必须是1,以此来代替常数项b
-    # x_train = np.array([[1,3,3],[1,4,3],[1,1,1]])
-    # y_train = np.array([1,1,-1])
-
-    # p = Perceptorn(l_=1)  # 调整超参数学习率lambda
-
-    # # 调用-fit1
-    # p.fit1(x_train, y_train)
-    # print("=" * 20 + "[iterate by formula in question A]" + "=" * 20)
-    # print(p.w)
-
-    # print()
-
-    # # 调用-fit2
-    # p.fit2(x_train, y_train)
-    # print("=" * 20 + "[iterate by formula in question B]" + "=" * 20)
-    # print(p.w)
