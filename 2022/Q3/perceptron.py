@@ -32,13 +32,16 @@ class Perceptorn(object):
         self.w = np.zeros(x_.shape[1])
 
         n = 0  # 迭代次数上限,避免死循环
-        while n < self.n_l:
+        has_misjudge = True  # early stop
+        while n < self.n_l and has_misjudge:
             n += 1
+            has_misjudge = False
             diff = np.zeros(x_.shape[1])
             for i in range(rows):
                 x, y = x_[i], y_[i]
                 # 计算是否为误判点,即indicator function里的内容
                 if y * (np.dot(self.w, x)) <= 0:
+                    has_misjudge = True
                     diff += np.dot(x, y)
             self.w = self.w + self.l * diff
 
@@ -53,14 +56,18 @@ class Perceptorn(object):
         self.w = np.zeros(x_.shape[1])
 
         n = 0  # 迭代次数上限,避免死循环
-        while n < self.n_l:
+        has_misjudge = True  # early stop
+        while n < self.n_l and has_misjudge:
             n += 1
-            x_j, y_j = x_[0], y_[0]
-            for i in range(1, rows):
+            has_misjudge = False
+            x_j, y_j = None, None
+            for i in range(rows):
                 x, y = x_[i], y_[i]
-                if y * (np.dot(self.w, x)) < y_j * (np.dot(self.w, x_j)):
+                if (x_j is None and y * np.dot(self.w, x) <= 0.0) or (x_j is not None and y * np.dot(self.w, x) <= min(y_j * np.dot(self.w, x_j), 0)):
+                    has_misjudge = True
                     x_j, y_j = x, y
-            self.w = self.w + self.l * np.dot(x_j, y_j)
+            if x_j is not None and y_j is not None:
+                self.w = self.w + self.l * np.dot(x_j, y_j)
 
     def plot(self, x_, y_):
         if x_.shape[1] != 2:
